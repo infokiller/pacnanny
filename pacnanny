@@ -33,6 +33,10 @@ PROMPT_REBOOT=true
 pacmanbin="${PACMAN:-pacman}"
 [[ -r /etc/pacnanny.conf ]] && source /etc/pacnanny.conf
 
+grep_pacman_log() {
+  grep --text "$@" /var/log/pacman.log
+}
+
 show_news () {
     if [ $COLOR = "never" ]; then
         printf ":: Checking for Arch Linux news...\n"
@@ -40,7 +44,7 @@ show_news () {
         printf "\033[1;34m::\033[0;1m Checking for Arch Linux news...\033[0m\n"
     fi
 
-    last_update=$(date -d "`grep 'starting full system upgrade' /var/log/pacman.log | \
+    last_update=$(date -d "`grep_pacman_log 'starting full system upgrade' | \
                             tail -n1 | grep -o '[-0-9\]* [:0-9]*'`" '+%s')
     news=./arch_news.rss
     curl --silent $NEWS_URL -o $news
@@ -179,13 +183,13 @@ get_log_in_date_range () {
     date2=`echo $1 | cut -d: -f2`
     # Try to find a reasonable starting point in the file, otherwise
     # this takes forever.
-    if grep -q `date -d "$date1" '+%Y-%m-%d %H:%M'` /var/log/pacman.log; then
+    if grep_pacman_log -q `date -d "$date1" '+%Y-%m-%d %H:%M'`; then
         start=`date -d "$date1" '+%Y-%m-%d %H:%M'`
-    elif grep -q `date -d "$date1" '+%Y-%m-%d'` /var/log/pacman.log; then
+    elif grep_pacman_log -q `date -d "$date1" '+%Y-%m-%d'`; then
         start=`date -d "$date1" '+%Y-%m-%d'`
-    elif grep -q `date -d "$date1" '+%Y-%m'` /var/log/pacman.log; then
+    elif grep_pacman_log -q `date -d "$date1" '+%Y-%m'`; then
         start=`date -d "$date1" '+%Y-%m'`
-    elif grep -q `date -d "$date1" '+%Y'` /var/log/pacman.log; then
+    elif grep_pacman_log -q `date -d "$date1" '+%Y'`; then
         start=`date -d "$date1" '+%Y'`
     else
         start='.*'
@@ -211,7 +215,7 @@ EOF
 }
 
 get_log_on_date () {
-    grep --color=never `date -d "$1" '+%Y-%m-%d'` /var/log/pacman.log
+    grep_pacman_log --color=never `date -d "$1" '+%Y-%m-%d'`
 }
 
 display_log () {
@@ -232,7 +236,7 @@ display_history () {
     else
         printf "\033[1;34m::\033[0;1m Package history for $1:\033[0m\n"
     fi
-    grep -a -E "(upgraded|installed|reinstalled|removed) $1 " /var/log/pacman.log | \
+    grep_pacman_log -a -E "(upgraded|installed|reinstalled|removed) $1 " | \
         sed -r 's/\[([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2})\].*(installed|reinstalled|upgraded|removed).*(\(.*\))/\1: \2 \3/g'
 }
 
