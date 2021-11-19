@@ -34,15 +34,20 @@ pacmanbin="${PACMAN:-pacman}"
 [[ -r /etc/pacnanny.conf ]] && source /etc/pacnanny.conf
 
 grep_pacman_log() {
-  grep --text "$@" /var/log/pacman.log
+    grep --text "$@" /var/log/pacman.log
+}
+
+print_message() {
+    local msg="$*"
+    if [ $COLOR = "never" ]; then
+        printf ":: %s\n" "${msg}"
+    else
+        printf "\033[1;36m::\033[0;1m %s\033[0m\n" "${msg}"
+    fi
 }
 
 show_news () {
-    if [ $COLOR = "never" ]; then
-        printf ":: Checking for Arch Linux news...\n"
-    else
-        printf "\033[1;34m::\033[0;1m Checking for Arch Linux news...\033[0m\n"
-    fi
+    print_message 'Checking for Arch Linux news...'
 
     last_update=$(date -d "`grep_pacman_log 'starting full system upgrade' | \
                             tail -n1 | grep -o '[-0-9\]* [:0-9]*'`" '+%s')
@@ -86,11 +91,7 @@ $msgs
 EOF
 )
     if [ "x$msgs_filtered" != "x" ]; then
-        if [ $COLOR = "never" ]; then
-            printf ":: Messages:\n"
-        else
-            printf "\033[1;34m::\033[0;1m Messages:\033[0m\n"
-        fi
+        print_message 'Messages:'
         printf "$msgs_filtered\n"
     fi
 }
@@ -101,11 +102,7 @@ $1
 EOF
 )
     if [ "x$warnings" != "x" ]; then
-        if [ $COLOR = "never" ]; then
-            printf ":: Warnings:\n"
-        else
-            printf "\033[1;34m::\033[0;1m Warnings:\033[0m\n"
-        fi
+        print_message 'Warnings:'
         printf "$warnings\n" | filter_log
     fi
 }
@@ -120,11 +117,7 @@ $warnings
 EOF
 )
     if [ "x$pacsaves" != "x" ]; then
-        if [ $COLOR = "never" ]; then
-            printf ":: New pacsave files:\n"
-        else
-            printf "\033[1;34m::\033[0;1m New pacsave files:\033[0m\n"
-        fi
+        print_message 'New pacsave files:'
         printf "$pacsaves\n" | filter_log
     fi
 }
@@ -139,11 +132,7 @@ $warnings
 EOF
 )
     if [ "x$pacnews" != "x" ]; then
-        if [ $COLOR = "never" ]; then
-            printf ":: New pacnew files:\n"
-        else
-            printf "\033[1;34m::\033[0;1m New pacnew files:\033[0m\n"
-        fi
+        print_message 'New pacnew files:'
         printf "$pacnews\n" | filter_log
     fi
 }
@@ -153,12 +142,7 @@ prompt_reboot () {
 $1
 EOF
         ); then
-        if [ $COLOR = "never" ]; then
-            printf ":: The kernel was updated.  Reboot now? (y/N)\n"
-        else
-            printf "\033[1;34m::\033[0;1m The kernel was updated.  Reboot now? (y/N)\033[0m\n"
-        fi
-        printf "\nThe kernel was updated. Reboot now? (y/N)\n"
+        print_message 'The kernel was updated. Reboot now? (y/N)'
         read reboot_resp
         if [ "$reboot_resp" = "y" ]; then
             systemctl reboot
@@ -219,11 +203,7 @@ get_log_on_date () {
 }
 
 display_log () {
-    if [ $COLOR = "never" ]; then
-        printf ":: Log entries for $1:\n"
-    else
-        printf "\033[1;34m::\033[0;1m Log entries for $1:\033[0m\n"
-    fi
+    print_message "Log entries for $1:"
     case "$1" in
         *:*) get_log_in_date_range "$1" ;;
         *) get_log_on_date "$1" ;;
@@ -231,11 +211,7 @@ display_log () {
 }
 
 display_history () {
-    if [ $COLOR = "never" ]; then
-        printf ":: Package history for $1:\n"
-    else
-        printf "\033[1;34m::\033[0;1m Package history for $1:\033[0m\n"
-    fi
+    print_message "Package history for $1:"
     grep_pacman_log -a -E "(upgraded|installed|reinstalled|removed) $1 " | \
         sed -r 's/\[([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2})\].*(installed|reinstalled|upgraded|removed).*(\(.*\))/\1: \2 \3/g'
 }
